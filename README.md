@@ -41,6 +41,10 @@ v4l2-ctl --list-devices
 
 ### Install pynetworktables
 
+Run the following command:
+
+sudo pip install pynetworktables
+
 ### Install pandas
 
 Run the following command:
@@ -58,6 +62,10 @@ v4l2-ctl -d /dev/video0 -c exposure_auto=1 -c exposure_absolute=$1 -c brightness
 Then run the python script:
 
 python detect_u_shapes_linux.py
+
+## Algorithm discussion
+
+Todo...
 
 
 
