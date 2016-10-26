@@ -59,7 +59,7 @@ def find_corner_points(contour):
     top_right_index = np.argmin(top_right_diff)
     top_right = contour[top_right_index, :]
 
-    return (bot_left,bot_right,top_left,top_right)
+    return (bot_left, bot_right, top_left, top_right)
 
 def angle(pt0, pt1, pt2):
     '''
@@ -71,7 +71,7 @@ def angle(pt0, pt1, pt2):
     dy2 = long(pt2[1] - pt0[1])
 
     return math.degrees(math.acos((dx1*dx2 + dy1*dy2)/
-        math.sqrt((dx1**2 + dy1**2)*(dx2**2+ dy2**2) + 1e-10)))
+                                  math.sqrt((dx1**2 + dy1**2)*(dx2**2+ dy2**2) + 1e-10)))
 
 def find_u_shapes(img, debug_mode):
     '''
@@ -86,11 +86,11 @@ def find_u_shapes(img, debug_mode):
         cv2.waitKey(0)
 
     # Blur, the convert to hsv
-    img = cv2.GaussianBlur(img,(3,3),0)
+    img = cv2.GaussianBlur(img, (3, 3), 0)
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # Determine where the green pixels are
-    mask = cv2.inRange(hsv_img,LOWER_GREEN,UPPER_GREEN)
+    mask = cv2.inRange(hsv_img, LOWER_GREEN, UPPER_GREEN)
 
     if debug_mode:
         cv2.imshow("mask", mask)
@@ -104,19 +104,19 @@ def find_u_shapes(img, debug_mode):
 
         # Approx contour to reduce the number of points
         peri = cv2.arcLength(contour, True)
-        contour = cv2.approxPolyDP(contour,APPROX_POLYDP_FACTOR*peri,True)
+        contour = cv2.approxPolyDP(contour, APPROX_POLYDP_FACTOR*peri, True)
 
         # Only consider the "larger" contours
         if peri > MIN_PERIMETER:
 
             # Calculate the outer 4 corner points
-            (bot_left,bot_right,top_left,top_right) = find_corner_points(contour)
+            (bot_left, bot_right, top_left, top_right) = find_corner_points(contour)
 
             # All angles should be around 90 deg
-            bot_left_angle = angle(bot_left,top_left,bot_right)
-            bot_right_angle = angle(bot_right,bot_left,top_right)
-            top_left_angle = angle(top_left,bot_left,top_right)
-            top_right_angle = angle(top_right,bot_right,top_left)
+            bot_left_angle = angle(bot_left, top_left, bot_right)
+            bot_right_angle = angle(bot_right, bot_left, top_right)
+            top_left_angle = angle(top_left, bot_left, top_right)
+            top_right_angle = angle(top_right, bot_right, top_left)
 
             if ((bot_left_angle > MIN_ANGLE and bot_left_angle < MAX_ANGLE) and
                 (bot_right_angle > MIN_ANGLE and bot_right_angle < MAX_ANGLE) and
@@ -127,22 +127,22 @@ def find_u_shapes(img, debug_mode):
             # Determine the enclosing box with the 4 corner points
             # Introduce a fudge factor to ensure the inner box is correct
 
-            box = np.vstack((bot_left + np.array((FUDGE_FACTOR,-FUDGE_FACTOR)),
-                             top_left + np.array((FUDGE_FACTOR,FUDGE_FACTOR)),
-                             top_right + np.array((-FUDGE_FACTOR,FUDGE_FACTOR)),
-                             bot_right + np.array((-FUDGE_FACTOR,-FUDGE_FACTOR))))
+            box = np.vstack((bot_left + np.array((FUDGE_FACTOR, -FUDGE_FACTOR)),
+                             top_left + np.array((FUDGE_FACTOR, FUDGE_FACTOR)),
+                             top_right + np.array((-FUDGE_FACTOR, FUDGE_FACTOR)),
+                             bot_right + np.array((-FUDGE_FACTOR, -FUDGE_FACTOR))))
 
-            top_left = top_left + np.array((0,FUDGE_FACTOR))
-            top_right = top_right + np.array((0,FUDGE_FACTOR))
+            top_left = top_left + np.array((0, FUDGE_FACTOR))
+            top_right = top_right + np.array((0, FUDGE_FACTOR))
 
             if debug_mode:
-                cv2.drawContours(img,[box],0,(0,0,255),thickness = 2)
+                cv2.drawContours(img, [box], 0, (0, 0, 255), thickness=2)
                 cv2.imshow("img", img)
                 cv2.waitKey(0)
 
             # Create an image of the outer box
-            inner_img = np.zeros((HEIGHT,WIDTH,1), np.uint8)
-            cv2.drawContours(inner_img,[box],0,(255),thickness = cv2.FILLED)
+            inner_img = np.zeros((HEIGHT, WIDTH, 1), np.uint8)
+            cv2.drawContours(inner_img, [box], 0, (255), thickness=cv2.FILLED)
 
             if debug_mode:
                 cv2.imshow("box", inner_img)
@@ -164,17 +164,17 @@ def find_u_shapes(img, debug_mode):
             for c_inner in cnts_inner:
 
                 peri = cv2.arcLength(c_inner, True)
-                c_inner = cv2.approxPolyDP(c_inner,APPROX_POLYDP_FACTOR*peri,True)
+                c_inner = cv2.approxPolyDP(c_inner, APPROX_POLYDP_FACTOR*peri, True)
 
                 if peri > MIN_PERIMETER and len(c_inner) >= 4:
                     # Calculate the inner 4 corner points
-                    (bot_left_inner,bot_right_inner,top_left_inner,top_right_inner) = find_corner_points(c_inner)
+                    (bot_left_inner, bot_right_inner, top_left_inner, top_right_inner) = find_corner_points(c_inner)
 
                     # All angles should be around 90 deg
-                    bot_left_inner_angle = angle(bot_left_inner,top_left_inner,bot_right_inner)
-                    bot_right_inner_angle = angle(bot_right_inner,bot_left_inner,top_right_inner)
-                    top_left_inner_angle = angle(top_left_inner,bot_left_inner,top_right_inner)
-                    top_right_inner_angle = angle(top_right_inner,bot_right_inner,top_left_inner)
+                    bot_left_inner_angle = angle(bot_left_inner, top_left_inner, bot_right_inner)
+                    bot_right_inner_angle = angle(bot_right_inner, bot_left_inner, top_right_inner)
+                    top_left_inner_angle = angle(top_left_inner, bot_left_inner, top_right_inner)
+                    top_right_inner_angle = angle(top_right_inner, bot_right_inner, top_left_inner)
 
                     if ((bot_left_inner_angle > MIN_ANGLE and bot_left_inner_angle < MAX_ANGLE) and
                         (bot_right_inner_angle > MIN_ANGLE and bot_right_inner_angle < MAX_ANGLE) and
@@ -183,10 +183,10 @@ def find_u_shapes(img, debug_mode):
                         continue
 
                     # Each leg of the "square" must be at least a certain length
-                    top_dist = distance.euclidean(top_left_inner,top_right_inner)
-                    bot_dist = distance.euclidean(bot_left_inner,bot_right_inner)
-                    left_side = distance.euclidean(top_left_inner,bot_left_inner)
-                    right_side = distance.euclidean(top_right_inner,bot_right_inner)
+                    top_dist = distance.euclidean(top_left_inner, top_right_inner)
+                    bot_dist = distance.euclidean(bot_left_inner, bot_right_inner)
+                    left_side = distance.euclidean(top_left_inner, bot_left_inner)
+                    right_side = distance.euclidean(top_right_inner, bot_right_inner)
 
                     if (top_dist < DIST_INNER_SQUARE_MIN or bot_dist < DIST_INNER_SQUARE_MIN
                         or left_side < DIST_INNER_SQUARE_MIN or right_side < DIST_INNER_SQUARE_MIN):
@@ -200,16 +200,16 @@ def find_u_shapes(img, debug_mode):
             if found_inner_box == False:
                 continue
 
-            inner_box = np.vstack((bot_left_inner,top_left_inner,top_right_inner,bot_right_inner))
+            inner_box = np.vstack((bot_left_inner, top_left_inner, top_right_inner, bot_right_inner))
 
             if debug_mode:
-                cv2.drawContours(img,[inner_box],0,(0,0,255),thickness = 2)
+                cv2.drawContours(img,[inner_box], 0, (0, 0, 255), thickness = 2)
                 cv2.imshow("img", img)
                 cv2.waitKey(0)
 
             # Create the total U shape image
-            u_shape = np.vstack((top_left,bot_left,bot_right,top_right,
-                                 top_right_inner,bot_right_inner,bot_left_inner,top_left_inner))
+            u_shape = np.vstack((top_left, bot_left, bot_right, top_right,
+                                 top_right_inner, bot_right_inner, bot_left_inner, top_left_inner))
 
             # Check top edge distances are similar
             upper_left_dist = distance.euclidean(top_left,top_left_inner)
