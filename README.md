@@ -67,6 +67,52 @@ python detect_u_shapes_linux.py
 
 Todo...
 
+## Connecting to the RoboRio
 
+### RoboRio Config
 
+First connect the rio to the laptop via USB cable.
 
+roborio IP address should be 10.13.27.22 (for Team 1327 config).
+
+To modify the rio's settings, connect it to a PC via USB and type 172.22.11.2 
+into a Firefox browser.  You will need to install MS Silverlight (Chrome does not support).
+The network configuration option is where you can modify the IP of the rio.
+
+In this configuration, the Jetson will talk to the RoboRio directly, 
+and then the rio will put its values on the driverstation smart dashboard to visualize.
+The ethernet cable needs to go from the jetson to the rio.
+
+### Jetson config
+
+Thus, the jetson needs to be on the same network as the Rio.  I have it set up as follows
+IP: 10.13.27.100
+Netmask: 255.0.0.0
+Gateway: 0.0.0.04
+
+In the python code, use the following: 
+
+NetworkTable.SetIPAddress('10.13.27.22')
+
+Which will make the jetson put its values on the RoboRio's networktable.
+Follow the driver station example at this link:
+
+http://pynetworktables.readthedocs.io/en/stable/examples.html#robot-example
+
+## Running the algorithm
+
+Open up a cmd terminal on the jetson.  Ensure the lifecam 3000 is properly detected by running 
+the following command:
+
+v4l2-ctl --list-devices
+
+Then, run the following command to modify the exposure settings:
+
+v4l2-ctl -d /dev/video0 -c exposure_auto=1 -c exposure_absolute=$1 
+-c brightness=30 -c contrast=10
+
+The image will pop up and when the object is detected, it will be highlighted with a red outline.
+Also, the terminal will show the features extracted.
+
+Back on the driverstation, those features should now be visible on the smartdashboard, 
+after you put teleop mode on.
