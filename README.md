@@ -28,11 +28,17 @@ http://opencv.org/downloads.html
 navigate to where the zip file was downloaded.  Run the following commands:
 
 unzip opencv-2.4.9.zip
+
 cd opencv-2.4.9.zip
+
 mkdir build
+
 cd build
+
 cmake -D WITH_CUDA=OFF ..
+
 make
+
 sudo make install
 
 ### Install pip
