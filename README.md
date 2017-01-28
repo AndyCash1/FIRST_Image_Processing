@@ -54,7 +54,9 @@ sudo make install
 Run the following 3 commands in sequence:
 
 sudo apt-get install python-pip python-dev build-essential
+
 sudo pip install --upgrade pip
+
 sudo pip install --upgrade virtualenv
 
 ### Install v4l
@@ -84,11 +86,13 @@ sudo apt-get install python-pandas
 First, install git using the following commands:
 
 sudo apt-get update
+
 sudo apt-get install git
 
 Then, set up your username and email:
 
 git config --global user.name "Your Name"
+
 git config --global user.email "youremail@domain.com"
 
 Now, clone this repo in a directory you want it:
@@ -104,9 +108,11 @@ Run startup_processing.sh
 
 First, disable requiring password on startup:
 
-navigate to user accounts
-click unlock, type password
-Toggle automatic login to on
+1. navigate to user accounts
+
+2. click unlock, type password
+
+3. Toggle automatic login to on
 
 Next, place the included rc.local file located in image_processing into 
 the /etc/ directory.
