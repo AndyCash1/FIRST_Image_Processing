@@ -29,6 +29,12 @@ You also need to connect the jetson to the laptop via the included mini USB to U
 
 ### Install opencv on jetson
 
+Run the following commands from a terminal:
+
+1. sudo apt-get install build-essential
+2. sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
+3. sudo apt-get install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+
 Download opencv 2.4.9 from here:
 
 http://opencv.org/downloads.html
@@ -63,7 +69,7 @@ sudo pip install --upgrade virtualenv
 
 Run the following command:
 
-sudo apt-get v4l-utils
+sudo apt-get install v4l-utils
 
 To display connected webcams, run the following command:
 
