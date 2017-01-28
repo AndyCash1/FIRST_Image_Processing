@@ -108,9 +108,6 @@ navigate to user accounts
 click unlock, type password
 Toggle automatic login to on
 
-Next, place the included rc.local file located in image_processing into 
-the /etc/ directory.
-
 ## Connecting to the RoboRio
 
 ### RoboRio Config
