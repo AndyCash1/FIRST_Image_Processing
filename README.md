@@ -115,7 +115,28 @@ First, disable requiring password on startup:
 3. Toggle automatic login to on
 
 Next, place the included rc.local file located in image_processing into 
-the /etc/ directory.
+the /etc/ directory with the following command, from the image_processing directory:
+
+sudo cp rc.local /etc
+
+Now, give that file the correct permissions, running the following commands:
+
+1. chown root /etc/rc.local
+2. chmod 755 /etc/rc.local
+
+Permissions can be checked by running:
+
+ls -l /etc/rc.local
+
+Now, the image processing will startup at boot!
+
+You can kill the process by running the following command:
+
+ps -ef | grep python
+
+Find the PID of the process (left most number) and then run:
+
+sudo kill <PID>
 
 ## Connecting to the RoboRio
 
