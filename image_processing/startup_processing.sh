@@ -16,7 +16,7 @@ fuser -k /dev/video0
 sleep 5
 
 echo "Launching image processing script"
-/usr/bin/python2.7 /home/ubuntu/Documents/image_processing/image_processing_2017frc.py
+/usr/bin/python2.7 /home/ubuntu/Documents/FIRST_Image_Processing/image_processing/image_processing_2017frc.py
 
 exit 0
 

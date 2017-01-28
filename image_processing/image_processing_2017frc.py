@@ -4,7 +4,7 @@ import math
 from networktables import NetworkTable
 
 
-DEBUG_FILEPATH = '/home/ubuntu/Documents/image_processing/'
+DEBUG_FILEPATH = '/home/ubuntu/Documents/FIRST_Image_Processing/image_processing/'
 
 # Min perimeter for the object... use for optimization
 MIN_PERIMETER = 100

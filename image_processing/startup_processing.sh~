@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "Waiting 20s for things to startup"
-sleep 20
+echo "Waiting 10s for things to startup"
+sleep 10
 
 echo "Setting pixel format"
 export LD_PRELOAD=/usr/lib/arm-linux-gnueabihf/libv4l/v4l2convert.so
