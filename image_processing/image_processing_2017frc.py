@@ -7,8 +7,8 @@ from networktables import NetworkTable
 DEBUG_FILEPATH = '/home/ubuntu/Documents/FIRST_Image_Processing/image_processing/'
 
 # Min perimeter for the object... use for optimization
-MIN_PERIMETER = 100
-MIN_AREA = 500
+MIN_PERIMETER = 50
+MIN_AREA = 200
 
 # Height and width of the returned image
 WIDTH = 640
@@ -17,22 +17,10 @@ HEIGHT = 480
 # Approximation constant that is multiplied by perimeter
 APPROX_POLYDP_FACTOR = 0.01
 
-# Inner square sides must be at least this length
-DIST_INNER_SQUARE_MIN = 10
-
-# Top edges must have 50% diff at max
-TOP_EDGES_FACTOR = 0.5
-
-# Top edges must not be more than 20% of the length of the bottom width
-TOP_EDGES_TO_BOTTOM = 0.2
-
-# Used to ensure the inner box doesnt have any left over pixels
-FUDGE_FACTOR = 3
-
 # Functional logicals
-REALTIME_MODE = True
+REALTIME_MODE = False
 NETWORK_MODE = False
-DISPLAY_IMAGE = False
+DISPLAY_IMAGE = True
 
 # Constants for green
 LOWER_GREEN = np.array([60, 190, 100])
@@ -119,6 +107,7 @@ def find_rectagles(img, debug_mode, debug_file):
             cv2.imshow("res", img)
             cv2.waitKey(0)
         
+        # Extract features from the image
         area0 = cv2.contourArea(saved_contour[0]) 
         area1 = cv2.contourArea(saved_contour[1]) 
         
@@ -203,7 +192,7 @@ if __name__ == "__main__":
 
     else:
         # For debugging purposes
-        img = cv2.imread('capture_9.png')
+        img = cv2.imread('test_10.png')
         
         (ret_val, img) = find_rectagles(img, True, False)
         
