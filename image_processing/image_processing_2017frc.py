@@ -276,27 +276,48 @@ if __name__ == "__main__":
     if REALTIME_MODE:
         while True:
             img = camera.read()[1]
-            (ret_val, img) = find_rectagles(img, False, True)
+            (high_goal_ret_val, img) = find_rectagles(img, False, True)
+            (peg_ret_val, img) = find_pegs(img, False, True)
             
-            if ret_val is None:
-                print "Not Found"
+            if high_goal_ret_val is None:
+                print "High Goal Not Found"
             else:
         
-                print "Top Area: " + str(ret_val['top_area'])
-                print "Top Ctr X: " + str(ret_val['top_ctr_X'])
-                print "Top Ctr Y: " + str(ret_val['top_ctr_Y'])
+                print "Top Area: " + str(high_goal_ret_val['top_area'])
+                print "Top Ctr X: " + str(high_goal_ret_val['top_ctr_X'])
+                print "Top Ctr Y: " + str(high_goal_ret_val['top_ctr_Y'])
                 
-                print "Bot Area: " + str(ret_val['bot_area'])
-                print "Bot Ctr X: " + str(ret_val['bot_ctr_X'])
-                print "Bot Ctr Y: " + str(ret_val['bot_ctr_Y'])
+                print "Bot Area: " + str(high_goal_ret_val['bot_area'])
+                print "Bot Ctr X: " + str(high_goal_ret_val['bot_ctr_X'])
+                print "Bot Ctr Y: " + str(high_goal_ret_val['bot_ctr_Y'])
                 
             if NETWORK_MODE:
-                sd.putNumber('Top_Area', ret_val['top_area'])
-                sd.putNumber('Top_Ctr_X', ret_val['top_ctr_X'])
-                sd.putNumber('Top_Ctr_Y', ret_val['top_ctr_Y'])
-                sd.putNumber('Bot_Area', ret_val['bot_area'])
-                sd.putNumber('Bot_Ctr_X', ret_val['bot_ctr_X'])
-                sd.putNumber('Bot_Ctr_Y', ret_val['bot_ctr_Y'])
+                sd.putNumber('Top_Area', high_goal_ret_val['top_area'])
+                sd.putNumber('Top_Ctr_X', high_goal_ret_val['top_ctr_X'])
+                sd.putNumber('Top_Ctr_Y', high_goal_ret_val['top_ctr_Y'])
+                sd.putNumber('Bot_Area', high_goal_ret_val['bot_area'])
+                sd.putNumber('Bot_Ctr_X', high_goal_ret_val['bot_ctr_X'])
+                sd.putNumber('Bot_Ctr_Y', high_goal_ret_val['bot_ctr_Y'])
+                
+            if peg_ret_val is None:
+                print "Peg Not Found"
+            else:
+        
+                print "Left Area: " + str(peg_ret_val['left_area'])
+                print "Left Ctr X: " + str(peg_ret_val['left_ctr_X'])
+                print "Left Ctr Y: " + str(peg_ret_val['left_ctr_Y'])
+                
+                print "Right Area: " + str(peg_ret_val['right_area'])
+                print "Right Ctr X: " + str(peg_ret_val['right_ctr_X'])
+                print "Right Ctr Y: " + str(peg_ret_val['right_ctr_Y'])
+                
+            if NETWORK_MODE:
+                sd.putNumber('Left_Area', peg_ret_val['left_area'])
+                sd.putNumber('Left_Ctr_X', peg_ret_val['left_ctr_X'])
+                sd.putNumber('Left_Ctr_Y', peg_ret_val['left_ctr_Y'])
+                sd.putNumber('Right_Area', peg_ret_val['right_area'])
+                sd.putNumber('Right_Ctr_X', peg_ret_val['right_ctr_X'])
+                sd.putNumber('Right_Ctr_Y', peg_ret_val['right_ctr_Y'])
                 
             if DISPLAY_IMAGE:
                 cv2.imshow('Img', img)
@@ -323,4 +344,3 @@ if __name__ == "__main__":
 #            print "Bot Ctr X: " + str(ret_val['bot_ctr_X'])
 #            print "Bot Ctr Y: " + str(ret_val['bot_ctr_Y'])
         
-    
