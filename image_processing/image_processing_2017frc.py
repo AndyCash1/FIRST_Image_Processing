@@ -289,7 +289,7 @@ def main():
 
     if NETWORK_MODE:
         # This is the IP of the robo rio
-        NetworkTable.setIPAddress('10.13.27.22')
+        NetworkTable.setIPAddress('10.13.29.2')
         NetworkTable.setClientMode()
         NetworkTable.initialize()
 
@@ -363,6 +363,12 @@ def main():
             if DISPLAY_IMAGE:
                 cv2.imshow('Img', img)
                 cv2.waitKey(1)
+                
+            # If in network mode, command to stop the image processing
+            if NETWORK_MODE:
+                kill_switch = sd.getNumber('Kill_Switch', 0)
+                if kill_switch == 1:
+                    return
 
     else:
         # For debugging purposes

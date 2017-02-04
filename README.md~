@@ -69,7 +69,7 @@ sudo pip install --upgrade virtualenv
 
 Run the following command:
 
-sudo apt-get v4l-utils
+sudo apt-get install v4l-utils
 
 To display connected webcams, run the following command:
 
