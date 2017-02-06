@@ -127,8 +127,8 @@ sudo cp rc.local /etc
 
 Now, give that file the correct permissions, running the following commands:
 
-1. chown root /etc/rc.local
-2. chmod 755 /etc/rc.local
+1. sudo chown root /etc/rc.local
+2. sudo chmod 755 /etc/rc.local
 
 Permissions can be checked by running:
 
