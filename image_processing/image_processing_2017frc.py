@@ -310,6 +310,9 @@ def main():
         sd.putNumber('Peg_Right_Area', -999)
         sd.putNumber('Peg_Right_Ctr_X', -999)
         sd.putNumber('Peg_Right_Ctr_Y', -999)
+        
+        # Reset the kill switch to 0
+        sd.putNumber('Kill_Switch', 0)
 
     if REALTIME_MODE:
         while True:
@@ -368,6 +371,7 @@ def main():
             if NETWORK_MODE:
                 kill_switch = sd.getNumber('Kill_Switch', 0)
                 if kill_switch == 1:
+                    # Return back to the shell script, which will then shutdown the jetson
                     return
 
     else:
