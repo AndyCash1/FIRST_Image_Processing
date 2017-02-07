@@ -24,9 +24,9 @@ HEIGHT = 480
 APPROX_POLYDP_FACTOR = 0.01
 
 # Functional logicals
-REALTIME_MODE = False
-NETWORK_MODE = False
-DISPLAY_IMAGE = True
+REALTIME_MODE = True
+NETWORK_MODE = True
+DISPLAY_IMAGE = False
 
 # Rectangle approx factors
 HG_MAX_AREA_DIFF = 3
@@ -289,7 +289,7 @@ def main():
 
     if NETWORK_MODE:
         # This is the IP of the robo rio
-        NetworkTable.setIPAddress('10.13.27.22')
+        NetworkTable.setIPAddress('10.13.29.2')
         NetworkTable.setClientMode()
         NetworkTable.initialize()
 
@@ -317,7 +317,7 @@ def main():
             img = camera.read()[1]
 
             # Run the algorithm
-            (peg_ret_val, high_goal_ret_val) = img_processing_main(img, False, False)
+            (peg_ret_val, high_goal_ret_val) = img_processing_main(img, False, True)
 
             # Analyze the return parameters
             if high_goal_ret_val is None:
@@ -332,13 +332,13 @@ def main():
                 print "HG Bot Ctr X: " + str(high_goal_ret_val['bot_ctr_X'])
                 print "HG Bot Ctr Y: " + str(high_goal_ret_val['bot_ctr_Y'])
 
-            if NETWORK_MODE:
-                sd.putNumber('HG_Top_Area', high_goal_ret_val['top_area'])
-                sd.putNumber('HG_Top_Ctr_X', high_goal_ret_val['top_ctr_X'])
-                sd.putNumber('HG_Top_Ctr_Y', high_goal_ret_val['top_ctr_Y'])
-                sd.putNumber('HG_Bot_Area', high_goal_ret_val['bot_area'])
-                sd.putNumber('HG_Bot_Ctr_X', high_goal_ret_val['bot_ctr_X'])
-                sd.putNumber('HG_Bot_Ctr_Y', high_goal_ret_val['bot_ctr_Y'])
+                if NETWORK_MODE:
+                    sd.putNumber('HG_Top_Area', high_goal_ret_val['top_area'])
+                    sd.putNumber('HG_Top_Ctr_X', high_goal_ret_val['top_ctr_X'])
+                    sd.putNumber('HG_Top_Ctr_Y', high_goal_ret_val['top_ctr_Y'])
+                    sd.putNumber('HG_Bot_Area', high_goal_ret_val['bot_area'])
+                    sd.putNumber('HG_Bot_Ctr_X', high_goal_ret_val['bot_ctr_X'])
+                    sd.putNumber('HG_Bot_Ctr_Y', high_goal_ret_val['bot_ctr_Y'])
 
             if peg_ret_val is None:
                 print "Peg Not Found"
@@ -352,17 +352,23 @@ def main():
                 print "Peg Right Ctr X: " + str(peg_ret_val['right_ctr_X'])
                 print "Peg Right Ctr Y: " + str(peg_ret_val['right_ctr_Y'])
 
-            if NETWORK_MODE:
-                sd.putNumber('Peg_Left_Area', peg_ret_val['left_area'])
-                sd.putNumber('Peg_Left_Ctr_X', peg_ret_val['left_ctr_X'])
-                sd.putNumber('Peg_Left_Ctr_Y', peg_ret_val['left_ctr_Y'])
-                sd.putNumber('Peg_Right_Area', peg_ret_val['right_area'])
-                sd.putNumber('Peg_Right_Ctr_X', peg_ret_val['right_ctr_X'])
-                sd.putNumber('Peg_Right_Ctr_Y', peg_ret_val['right_ctr_Y'])
+                if NETWORK_MODE:
+                    sd.putNumber('Peg_Left_Area', peg_ret_val['left_area'])
+                    sd.putNumber('Peg_Left_Ctr_X', peg_ret_val['left_ctr_X'])
+                    sd.putNumber('Peg_Left_Ctr_Y', peg_ret_val['left_ctr_Y'])
+                    sd.putNumber('Peg_Right_Area', peg_ret_val['right_area'])
+                    sd.putNumber('Peg_Right_Ctr_X', peg_ret_val['right_ctr_X'])
+                    sd.putNumber('Peg_Right_Ctr_Y', peg_ret_val['right_ctr_Y'])
 
             if DISPLAY_IMAGE:
                 cv2.imshow('Img', img)
                 cv2.waitKey(1)
+                
+            # If in network mode, command to stop the image processing
+            if NETWORK_MODE:
+                kill_switch = sd.getNumber('Kill_Switch', 0)
+                if kill_switch == 1:
+                    return
 
     else:
         # For debugging purposes
