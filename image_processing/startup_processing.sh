@@ -17,6 +17,10 @@ sleep 5
 
 echo "Launching image processing script"
 /usr/bin/python2.7 /home/ubuntu/Documents/FIRST_Image_Processing/image_processing/image_processing_2017frc.py
+sleep 1
+
+echo "Shutting down"
+/sbin/shutdown -h now
 
 exit 0
 

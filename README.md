@@ -150,7 +150,7 @@ sudo kill <PID>
 
 First connect the rio to the laptop via USB cable.
 
-roborio IP address should be 10.13.27.22 (for Team 1327 config).
+roborio IP address should be 10.13.29.2 (for Team 1329 config).
 
 To modify the rio's settings, connect it to a PC via USB and type 172.22.11.2 
 into a Firefox browser.  You will need to install MS Silverlight (Chrome does not support).
@@ -163,13 +163,13 @@ The ethernet cable needs to go from the jetson to the rio.
 ### Jetson config
 
 Thus, the jetson needs to be on the same network as the Rio.  I have it set up as follows
-IP: 10.13.27.100
+IP: 10.13.29.11
 Netmask: 255.0.0.0
-Gateway: 0.0.0.04
+Gateway: 0.0.0.0
 
 In the python code, use the following: 
 
-NetworkTable.SetIPAddress('10.13.27.22')
+NetworkTable.SetIPAddress('10.13.29.2')
 
 Which will make the jetson put its values on the RoboRio's networktable.
 Follow the driver station example at this link:
