@@ -1,0 +1,73 @@
+Listing available controls for device video0:
+  Brightness
+    ID      : 0x00000001,
+    Type    : Dword,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 255, step size: 1 ],
+    Default : 128
+  Contrast
+    ID      : 0x00000002,
+    Type    : Dword,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 255, step size: 1 ],
+    Default : 32
+  Saturation
+    ID      : 0x00000004,
+    Type    : Dword,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 255, step size: 1 ],
+    Default : 32
+  White Balance Temperature, Auto
+    ID      : 0x00000009,
+    Type    : Boolean,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 1, step size: 1 ],
+    Default : 1
+  Gain
+    ID      : 0x00000003,
+    Type    : Dword,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 255, step size: 1 ],
+    Default : 64
+  Power Line Frequency
+    ID      : 0x0000000d,
+    Type    : Choice,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : { 'Disabled'[0], '50 Hz'[1], '60 Hz'[2] },
+    Default : 2
+  White Balance Temperature
+    ID      : 0x00000008,
+    Type    : Dword,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 10000, step size: 10 ],
+    Default : 4000
+  Sharpness
+    ID      : 0x00000007,
+    Type    : Dword,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 255, step size: 1 ],
+    Default : 24
+  Backlight Compensation
+    ID      : 0x0000000c,
+    Type    : Dword,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 1, step size: 1 ],
+    Default : 0
+  Exposure, Auto
+    ID      : 0x0000000f,
+    Type    : Choice,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : { 'Manual Mode'[1], 'Aperture Priority Mode'[3] },
+    Default : 3
+  Exposure (Absolute)
+    ID      : 0x00000011,
+    Type    : Dword,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 1 .. 10000, step size: 1 ],
+    Default : 166
+  Exposure, Auto Priority
+    ID      : 0x00000010,
+    Type    : Boolean,
+    Flags   : { CAN_READ, CAN_WRITE },
+    Values  : [ 0 .. 1, step size: 1 ],
+    Default : 0
