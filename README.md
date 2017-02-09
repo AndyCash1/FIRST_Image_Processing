@@ -105,6 +105,12 @@ Now, clone this repo in a directory you want it:
 
 git clone https://github.com/AndyCash1/FIRST_Image_Processing
 
+### Determine Webcam settings
+
+sudo apt-get install uvcdynctrl
+
+uvcdynctrl -c -v
+
 ## Running the image detection code on the Jetson manually
 
 Navigate to the image_processing folder from the repo just cloned.
