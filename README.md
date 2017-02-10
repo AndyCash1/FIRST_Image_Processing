@@ -111,6 +111,16 @@ sudo apt-get install uvcdynctrl
 
 uvcdynctrl -c -v
 
+### Get serial number and other info of webcam
+
+This is very useful when you have multiple cameras
+
+udevadm info --query=property --name=/dev/video0
+
+The output of this can be put into a python variable using:
+
+a = subprocess.check_output("udevadm info --query=all --name=/dev/video0", shell=True)
+
 ## Running the image detection code on the Jetson manually
 
 Navigate to the image_processing folder from the repo just cloned.
