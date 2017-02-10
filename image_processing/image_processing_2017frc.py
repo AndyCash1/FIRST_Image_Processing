@@ -6,6 +6,7 @@ It is used for the 2017 FRC competition
 import numpy as np
 import cv2
 import copy
+import time
 from networktables import NetworkTable
 
 # For purposes of outputting a debug file that lets you know the program is running
@@ -296,6 +297,8 @@ def main():
         # The name of the network table here needs to match the name in the java code
         sd = NetworkTable.getTable('Camera')
         
+        time.sleep(1)
+        
         # Initialize the values
         sd.putNumber('HG_Top_Area', -999)
         sd.putNumber('HG_Top_Ctr_X', -999)
@@ -312,7 +315,9 @@ def main():
         sd.putNumber('Peg_Right_Ctr_Y', -999)
         
         # Reset the kill switch to 0
-        sd.putNumber('Kill_Switch', 0)
+        heartbeat = 0
+        sd.putNumber('Processing_On', 0)
+        sd.putNumber('Heartbeat', heartbeat)
 
     if REALTIME_MODE:
         while True:
@@ -321,6 +326,9 @@ def main():
 
             # Run the algorithm
             (peg_ret_val, high_goal_ret_val) = img_processing_main(img, False, True)
+            
+            heartbeat += 0.0001
+            sd.putNumber('Heartbeat', heartbeat)
 
             # Analyze the return parameters
             if high_goal_ret_val is None:
@@ -372,6 +380,8 @@ def main():
                 kill_switch = sd.getNumber('Kill_Switch', 0)
                 if kill_switch == 1:
                     # Return back to the shell script, which will then shutdown the jetson
+                    sd.putNumber('Processing_On', -1)
+                    time.sleep(1)
                     return
 
     else:
