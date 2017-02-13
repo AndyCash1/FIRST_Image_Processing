@@ -110,7 +110,7 @@ def calc_height_width(contour):
 
     return (height, width)
 
-def img_processing_main(img, debug_mode, debug_file):
+def img_processing_main(img, hg_logical, debug_mode, debug_file):
     """
     This method is responsible for calling both of the detection algorithms (pegs and high goal)
     And then returning the results back to main
@@ -133,12 +133,14 @@ def img_processing_main(img, debug_mode, debug_file):
     # find contours among the mask
     cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    ret_val_pegs = find_pegs(copy.deepcopy(img), cnts, debug_mode, debug_file)
-    ret_val_highgoal = find_highgoal(copy.deepcopy(img), cnts, debug_mode, debug_file)
+    if hg_logical:
+        ret_val = find_highgoal(copy.deepcopy(img), cnts, debug_mode, debug_file)
+    else:
+        ret_val = find_gear(copy.deepcopy(img), cnts, debug_mode, debug_file)
 
-    return (ret_val_pegs, ret_val_highgoal)
+    return ret_val
 
-def find_pegs(img, cnts, debug_mode, debug_file):
+def find_gear(img, cnts, debug_mode, debug_file):
     """
     This method finds the rectangle reflective shapes that are on both sides of the
     peg, and returns features from them
@@ -384,13 +386,28 @@ def main():
             hg_logical = sd.getNumber('High_Goal_Logical', 1)
             
             if hg_logical == 1:      
-                img = camera_hg.read()[1]
-            else:
-                img = camera_gear.read()[1]
+                sd.putNumber('Peg_Left_Area', -999)
+                sd.putNumber('Peg_Left_Ctr_X', -999)
+                sd.putNumber('Peg_Left_Ctr_Y', -999)
+                sd.putNumber('Peg_Right_Area', -999)
+                sd.putNumber('Peg_Right_Ctr_X', -999)
+                sd.putNumber('Peg_Right_Ctr_Y', -999)
                 
-            # Run the algorithm
-            (peg_ret_val, high_goal_ret_val) = img_processing_main(img, False, DEBUG_TXT_FILES)
-            
+                img = camera_hg.read()[1]
+                high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
+                gear_ret_val = None
+            else:
+                sd.putNumber('HG_Top_Area', -999)
+                sd.putNumber('HG_Top_Ctr_X', -999)
+                sd.putNumber('HG_Top_Ctr_Y', -999)
+                sd.putNumber('HG_Bot_Area', -999)
+                sd.putNumber('HG_Bot_Ctr_X', -999)
+                sd.putNumber('HG_Bot_Ctr_Y', -999)
+                
+                img = camera_gear.read()[1]
+                gear_ret_val = img_processing_main(img, False, False, DEBUG_TXT_FILES)
+                high_goal_ret_val = None
+                
             heartbeat += 0.0001
             sd.putNumber('Heartbeat', heartbeat)
 
@@ -415,25 +432,25 @@ def main():
                     sd.putNumber('HG_Bot_Ctr_X', high_goal_ret_val['bot_ctr_X'])
                     sd.putNumber('HG_Bot_Ctr_Y', high_goal_ret_val['bot_ctr_Y'])
 
-            if peg_ret_val is None:
+            if gear_ret_val is None:
                 print "Peg Not Found"
             else:
 
-                print "Peg Left Area: " + str(peg_ret_val['left_area'])
-                print "Peg Left Ctr X: " + str(peg_ret_val['left_ctr_X'])
-                print "Peg Left Ctr Y: " + str(peg_ret_val['left_ctr_Y'])
+                print "Peg Left Area: " + str(gear_ret_val['left_area'])
+                print "Peg Left Ctr X: " + str(gear_ret_val['left_ctr_X'])
+                print "Peg Left Ctr Y: " + str(gear_ret_val['left_ctr_Y'])
 
-                print "Peg Right Area: " + str(peg_ret_val['right_area'])
-                print "Peg Right Ctr X: " + str(peg_ret_val['right_ctr_X'])
-                print "Peg Right Ctr Y: " + str(peg_ret_val['right_ctr_Y'])
+                print "Peg Right Area: " + str(gear_ret_val['right_area'])
+                print "Peg Right Ctr X: " + str(gear_ret_val['right_ctr_X'])
+                print "Peg Right Ctr Y: " + str(gear_ret_val['right_ctr_Y'])
 
                 if NETWORK_MODE:
-                    sd.putNumber('Peg_Left_Area', peg_ret_val['left_area'])
-                    sd.putNumber('Peg_Left_Ctr_X', peg_ret_val['left_ctr_X'])
-                    sd.putNumber('Peg_Left_Ctr_Y', peg_ret_val['left_ctr_Y'])
-                    sd.putNumber('Peg_Right_Area', peg_ret_val['right_area'])
-                    sd.putNumber('Peg_Right_Ctr_X', peg_ret_val['right_ctr_X'])
-                    sd.putNumber('Peg_Right_Ctr_Y', peg_ret_val['right_ctr_Y'])
+                    sd.putNumber('Peg_Left_Area', gear_ret_val['left_area'])
+                    sd.putNumber('Peg_Left_Ctr_X', gear_ret_val['left_ctr_X'])
+                    sd.putNumber('Peg_Left_Ctr_Y', gear_ret_val['left_ctr_Y'])
+                    sd.putNumber('Peg_Right_Area', gear_ret_val['right_area'])
+                    sd.putNumber('Peg_Right_Ctr_X', gear_ret_val['right_ctr_X'])
+                    sd.putNumber('Peg_Right_Ctr_Y', gear_ret_val['right_ctr_Y'])
 
             if DISPLAY_IMAGE:
                 cv2.imshow('Img', img)
