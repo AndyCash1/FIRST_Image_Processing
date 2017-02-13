@@ -7,6 +7,8 @@ import numpy as np
 import cv2
 import copy
 import time
+import subprocess
+import os
 from networktables import NetworkTable
 
 # For purposes of outputting a debug file that lets you know the program is running
@@ -28,6 +30,8 @@ APPROX_POLYDP_FACTOR = 0.01
 REALTIME_MODE = True
 NETWORK_MODE = True
 DISPLAY_IMAGE = False
+DEBUG_TXT_FILES = False
+ALLOW_SHUTDOWN = False
 
 # Rectangle approx factors
 HG_MAX_AREA_DIFF = 3
@@ -41,6 +45,51 @@ PEG_MIN_PERI_DIFF = 0.75
 LOWER_GREEN = np.array([60, 190, 100])
 UPPER_GREEN = np.array([80, 255, 255])
 
+
+HIGH_GOAL_CAM_ID = '9BCFC920'
+GEAR_CAM_ID = ''
+
+
+def determine_cameras():
+    info0 = subprocess.check_output("udevadm info --query=all --name=/dev/video0", shell=True)
+    info1 = subprocess.check_output("udevadm info --query=all --name=/dev/video1", shell=True)
+    
+    id0 = info0.split('ID_SERIAL_SHORT=')[1].split('\n')[0]
+    id1 = info1.split('ID_SERIAL_SHORT=')[1].split('\n')[0]
+    
+    high_goal_port = -999
+    gear_port = -999
+    
+    high_goal_found = -88
+    gear_found = -88
+    
+    if (id0 == HIGH_GOAL_CAM_ID):
+        high_goal_port = 0
+    if (id0 == GEAR_CAM_ID):
+        gear_port = 0
+    if (id1 == HIGH_GOAL_CAM_ID):
+        high_goal_port = 1
+    if (id1 == GEAR_CAM_ID):
+        gear_port = 1
+        
+    if (high_goal_port != -999) and (gear_port != -999):
+        # Both successfully found
+        high_goal_found = 88
+        gear_found = 88
+    elif (high_goal_port != -999) and (gear_port == -999):
+        # Gear port not found, set it equal to high goal port
+        high_goal_found = 88
+        gear_port = high_goal_port
+    elif (high_goal_port == -999) and (gear_port != -999):
+        # high goal port not found, set it equal to high goal port
+        gear_found = 88
+        high_goal_port = gear_port
+    else:
+        # Neither found.  Default to 0
+        high_goal_port = 0
+        gear_port = 0
+        
+    return (high_goal_port, gear_port, high_goal_found, gear_found)
 
 def calc_height_width(contour):
     """
@@ -285,8 +334,10 @@ def main():
     Main method for image processing
     """
     if REALTIME_MODE:
-        camera_port = 0
-        camera = cv2.VideoCapture(camera_port)
+        (high_goal_port, gear_port, high_goal_found, gear_found) = determine_cameras()
+        
+        camera_hg = cv2.VideoCapture(high_goal_port)
+        camera_gear = cv2.VideoCapture(gear_port)
 
     if NETWORK_MODE:
         # This is the IP of the robo rio
@@ -318,14 +369,27 @@ def main():
         heartbeat = 0
         sd.putNumber('Processing_On', 0)
         sd.putNumber('Heartbeat', heartbeat)
+        
+        if REALTIME_MODE:
+            sd.putNumber('High_Goal_Port', high_goal_port)
+            sd.putNumber('Gear_Port', gear_port)
+            sd.putNumber('High_Goal_Cam_Found', high_goal_found)
+            sd.putNumber('Gear_Cam_Found', gear_found)
 
     if REALTIME_MODE:
         while True:
-            # Grab the image from the camera
-            img = camera.read()[1]
-
+            # Determine which camera we should be looking at
+            # We still run the algorithm for both targets, as a safety if the cameras are 
+            # somehow switches
+            hg_logical = sd.getNumber('High_Goal_Logical', 1)
+            
+            if hg_logical == 1:      
+                img = camera_hg.read()[1]
+            else:
+                img = camera_gear.read()[1]
+                
             # Run the algorithm
-            (peg_ret_val, high_goal_ret_val) = img_processing_main(img, False, True)
+            (peg_ret_val, high_goal_ret_val) = img_processing_main(img, False, DEBUG_TXT_FILES)
             
             heartbeat += 0.0001
             sd.putNumber('Heartbeat', heartbeat)
@@ -381,6 +445,9 @@ def main():
                 if kill_switch == 1:
                     # Return back to the shell script, which will then shutdown the jetson
                     sd.putNumber('Processing_On', -1)
+                    time.sleep(1)
+                    if ALLOW_SHUTDOWN:
+                        os.system('/sbin/shutdown -h now')
                     time.sleep(1)
                     return
 
