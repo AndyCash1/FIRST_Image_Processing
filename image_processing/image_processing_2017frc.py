@@ -9,6 +9,7 @@ import copy
 import time
 import subprocess
 import os
+import random
 from networktables import NetworkTable
 
 # For purposes of outputting a debug file that lets you know the program is running
@@ -17,7 +18,7 @@ DEBUG_FILEPATH = '/home/ubuntu/Documents/FIRST_Image_Processing/image_processing
 # Min perimeter for the object... contours are not processed
 # unless they meet both of these requirements
 MIN_PERIMETER = 50
-MIN_AREA = 200
+MIN_AREA = 100
 
 # Height and width of the returned image
 WIDTH = 640
@@ -28,8 +29,8 @@ APPROX_POLYDP_FACTOR = 0.01
 
 # Functional logicals
 REALTIME_MODE = True
-NETWORK_MODE = True
-DISPLAY_IMAGE = False
+NETWORK_MODE = False
+DISPLAY_IMAGE = True
 DEBUG_TXT_FILES = False
 ALLOW_SHUTDOWN = False
 
@@ -45,9 +46,10 @@ PEG_MIN_PERI_DIFF = 0.75
 LOWER_GREEN = np.array([60, 190, 100])
 UPPER_GREEN = np.array([80, 255, 255])
 
-
+# Constants for camera
 HIGH_GOAL_CAM_ID = '9BCFC920'
-GEAR_CAM_ID = ''
+GEAR_CAM_ID = '0F5FC920'
+DEFAULT_HIGH_GOAL_CAM = 0
 
 
 def determine_cameras():
@@ -369,7 +371,7 @@ def main():
         
         # Reset the kill switch to 0
         heartbeat = 0
-        sd.putNumber('Processing_On', 0)
+        sd.putNumber('Processing_On', 1)
         sd.putNumber('Heartbeat', heartbeat)
         
         if REALTIME_MODE:
@@ -383,33 +385,44 @@ def main():
             # Determine which camera we should be looking at
             # We still run the algorithm for both targets, as a safety if the cameras are 
             # somehow switches
-            hg_logical = sd.getNumber('High_Goal_Logical', 1)
+            if NETWORK_MODE:
+                hg_logical = sd.getNumber('High_Goal_Logical', DEFAULT_HIGH_GOAL_CAM)
             
-            if hg_logical == 1:      
-                sd.putNumber('Peg_Left_Area', -999)
-                sd.putNumber('Peg_Left_Ctr_X', -999)
-                sd.putNumber('Peg_Left_Ctr_Y', -999)
-                sd.putNumber('Peg_Right_Area', -999)
-                sd.putNumber('Peg_Right_Ctr_X', -999)
-                sd.putNumber('Peg_Right_Ctr_Y', -999)
+                if hg_logical == 1:      
+                    sd.putNumber('Peg_Left_Area', -999)
+                    sd.putNumber('Peg_Left_Ctr_X', -999)
+                    sd.putNumber('Peg_Left_Ctr_Y', -999)
+                    sd.putNumber('Peg_Right_Area', -999)
+                    sd.putNumber('Peg_Right_Ctr_X', -999)
+                    sd.putNumber('Peg_Right_Ctr_Y', -999)
                 
-                img = camera_hg.read()[1]
-                high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
-                gear_ret_val = None
+                    img = camera_hg.read()[1]
+                    high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
+                    gear_ret_val = None
+                else:
+                    sd.putNumber('HG_Top_Area', -999)
+                    sd.putNumber('HG_Top_Ctr_X', -999)
+                    sd.putNumber('HG_Top_Ctr_Y', -999)
+                    sd.putNumber('HG_Bot_Area', -999)
+                    sd.putNumber('HG_Bot_Ctr_X', -999)
+                    sd.putNumber('HG_Bot_Ctr_Y', -999)
+                
+                    img = camera_gear.read()[1]
+                    gear_ret_val = img_processing_main(img, False, False, DEBUG_TXT_FILES)
+                    high_goal_ret_val = None
+                
+                heartbeat += 0.0001
+                sd.putNumber('Heartbeat', heartbeat)
             else:
-                sd.putNumber('HG_Top_Area', -999)
-                sd.putNumber('HG_Top_Ctr_X', -999)
-                sd.putNumber('HG_Top_Ctr_Y', -999)
-                sd.putNumber('HG_Bot_Area', -999)
-                sd.putNumber('HG_Bot_Ctr_X', -999)
-                sd.putNumber('HG_Bot_Ctr_Y', -999)
-                
-                img = camera_gear.read()[1]
-                gear_ret_val = img_processing_main(img, False, False, DEBUG_TXT_FILES)
-                high_goal_ret_val = None
-                
-            heartbeat += 0.0001
-            sd.putNumber('Heartbeat', heartbeat)
+                val = random.randint(0,1)
+                if val:
+                    img = camera_hg.read()[1]
+                    high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
+                    gear_ret_val = None
+                else:
+                    img = camera_gear.read()[1]
+                    gear_ret_val = img_processing_main(img, False, False, DEBUG_TXT_FILES)
+                    high_goal_ret_val = None
 
             # Analyze the return parameters
             if high_goal_ret_val is None:

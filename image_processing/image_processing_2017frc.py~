@@ -6,6 +6,9 @@ It is used for the 2017 FRC competition
 import numpy as np
 import cv2
 import copy
+import time
+import subprocess
+import os
 from networktables import NetworkTable
 
 # For purposes of outputting a debug file that lets you know the program is running
@@ -14,7 +17,7 @@ DEBUG_FILEPATH = '/home/ubuntu/Documents/FIRST_Image_Processing/image_processing
 # Min perimeter for the object... contours are not processed
 # unless they meet both of these requirements
 MIN_PERIMETER = 50
-MIN_AREA = 200
+MIN_AREA = 100
 
 # Height and width of the returned image
 WIDTH = 640
@@ -27,6 +30,8 @@ APPROX_POLYDP_FACTOR = 0.01
 REALTIME_MODE = True
 NETWORK_MODE = True
 DISPLAY_IMAGE = False
+DEBUG_TXT_FILES = False
+ALLOW_SHUTDOWN = False
 
 # Rectangle approx factors
 HG_MAX_AREA_DIFF = 3
@@ -40,6 +45,52 @@ PEG_MIN_PERI_DIFF = 0.75
 LOWER_GREEN = np.array([60, 190, 100])
 UPPER_GREEN = np.array([80, 255, 255])
 
+# Constants for camera
+HIGH_GOAL_CAM_ID = '9BCFC920'
+GEAR_CAM_ID = '0F5FC920'
+DEFAULT_HIGH_GOAL_CAM = 0
+
+
+def determine_cameras():
+    info0 = subprocess.check_output("udevadm info --query=all --name=/dev/video0", shell=True)
+    info1 = subprocess.check_output("udevadm info --query=all --name=/dev/video1", shell=True)
+    
+    id0 = info0.split('ID_SERIAL_SHORT=')[1].split('\n')[0]
+    id1 = info1.split('ID_SERIAL_SHORT=')[1].split('\n')[0]
+    
+    high_goal_port = -999
+    gear_port = -999
+    
+    high_goal_found = -88
+    gear_found = -88
+    
+    if (id0 == HIGH_GOAL_CAM_ID):
+        high_goal_port = 0
+    if (id0 == GEAR_CAM_ID):
+        gear_port = 0
+    if (id1 == HIGH_GOAL_CAM_ID):
+        high_goal_port = 1
+    if (id1 == GEAR_CAM_ID):
+        gear_port = 1
+        
+    if (high_goal_port != -999) and (gear_port != -999):
+        # Both successfully found
+        high_goal_found = 88
+        gear_found = 88
+    elif (high_goal_port != -999) and (gear_port == -999):
+        # Gear port not found, set it equal to high goal port
+        high_goal_found = 88
+        gear_port = high_goal_port
+    elif (high_goal_port == -999) and (gear_port != -999):
+        # high goal port not found, set it equal to high goal port
+        gear_found = 88
+        high_goal_port = gear_port
+    else:
+        # Neither found.  Default to 0
+        high_goal_port = 0
+        gear_port = 0
+        
+    return (high_goal_port, gear_port, high_goal_found, gear_found)
 
 def calc_height_width(contour):
     """
@@ -60,7 +111,7 @@ def calc_height_width(contour):
 
     return (height, width)
 
-def img_processing_main(img, debug_mode, debug_file):
+def img_processing_main(img, hg_logical, debug_mode, debug_file):
     """
     This method is responsible for calling both of the detection algorithms (pegs and high goal)
     And then returning the results back to main
@@ -83,12 +134,14 @@ def img_processing_main(img, debug_mode, debug_file):
     # find contours among the mask
     cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    ret_val_pegs = find_pegs(copy.deepcopy(img), cnts, debug_mode, debug_file)
-    ret_val_highgoal = find_highgoal(copy.deepcopy(img), cnts, debug_mode, debug_file)
+    if hg_logical:
+        ret_val = find_highgoal(copy.deepcopy(img), cnts, debug_mode, debug_file)
+    else:
+        ret_val = find_gear(copy.deepcopy(img), cnts, debug_mode, debug_file)
 
-    return (ret_val_pegs, ret_val_highgoal)
+    return ret_val
 
-def find_pegs(img, cnts, debug_mode, debug_file):
+def find_gear(img, cnts, debug_mode, debug_file):
     """
     This method finds the rectangle reflective shapes that are on both sides of the
     peg, and returns features from them
@@ -284,8 +337,10 @@ def main():
     Main method for image processing
     """
     if REALTIME_MODE:
-        camera_port = 0
-        camera = cv2.VideoCapture(camera_port)
+        (high_goal_port, gear_port, high_goal_found, gear_found) = determine_cameras()
+        
+        #camera_hg = cv2.VideoCapture(high_goal_port)
+        #camera_gear = cv2.VideoCapture(gear_port)
 
     if NETWORK_MODE:
         # This is the IP of the robo rio
@@ -295,6 +350,8 @@ def main():
 
         # The name of the network table here needs to match the name in the java code
         sd = NetworkTable.getTable('Camera')
+        
+        time.sleep(1)
         
         # Initialize the values
         sd.putNumber('HG_Top_Area', -999)
@@ -310,14 +367,80 @@ def main():
         sd.putNumber('Peg_Right_Area', -999)
         sd.putNumber('Peg_Right_Ctr_X', -999)
         sd.putNumber('Peg_Right_Ctr_Y', -999)
+        
+        # Reset the kill switch to 0
+        heartbeat = 0
+        sd.putNumber('Processing_On', 1)
+        sd.putNumber('Heartbeat', heartbeat)
+        
+        if REALTIME_MODE:
+            sd.putNumber('High_Goal_Port', high_goal_port)
+            sd.putNumber('Gear_Port', gear_port)
+            sd.putNumber('High_Goal_Cam_Found', high_goal_found)
+            sd.putNumber('Gear_Cam_Found', gear_found)
 
     if REALTIME_MODE:
         while True:
-            # Grab the image from the camera
-            img = camera.read()[1]
+            if DEFAULT_HIGH_GOAL_CAM:
+            	current_camera = 'HG'
+                cam = cv2.VideoCapture(high_goal_port)
+            else:
+                current_camera = 'Gear'
+                cam = cv2.VideoCapture(gear_port)
+            # Determine which camera we should be looking at
+            # We still run the algorithm for both targets, as a safety if the cameras are 
+            # somehow switches
+            if NETWORK_MODE:
+                hg_logical = sd.getNumber('High_Goal_Logical', DEFAULT_HIGH_GOAL_CAM)
+            
+                if hg_logical == 1:      
+                    sd.putNumber('Peg_Left_Area', -999)
+                    sd.putNumber('Peg_Left_Ctr_X', -999)
+                    sd.putNumber('Peg_Left_Ctr_Y', -999)
+                    sd.putNumber('Peg_Right_Area', -999)
+                    sd.putNumber('Peg_Right_Ctr_X', -999)
+                    sd.putNumber('Peg_Right_Ctr_Y', -999)
 
-            # Run the algorithm
-            (peg_ret_val, high_goal_ret_val) = img_processing_main(img, False, True)
+                    if current_camera == 'Gear':
+                        cam.release()
+                        time.sleep(0.25)
+                        cam = cv2.VideoCapture(high_goal_port)
+                        time.sleep(0.25)
+                        current_camera = 'HG'
+                
+                    img = cam.read()[1]
+                    high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
+                    gear_ret_val = None
+                else:
+                    sd.putNumber('HG_Top_Area', -999)
+                    sd.putNumber('HG_Top_Ctr_X', -999)
+                    sd.putNumber('HG_Top_Ctr_Y', -999)
+                    sd.putNumber('HG_Bot_Area', -999)
+                    sd.putNumber('HG_Bot_Ctr_X', -999)
+                    sd.putNumber('HG_Bot_Ctr_Y', -999)
+
+                    if current_camera == 'HG':
+                        cam.release()
+                        time.sleep(0.25)
+                        cam = cv2.VideoCapture(gear_port)
+                        time.sleep(0.25)
+                        current_camera = 'Gear'
+                
+                    img = cam.read()[1]
+                    gear_ret_val = img_processing_main(img, False, False, DEBUG_TXT_FILES)
+                    high_goal_ret_val = None
+                
+                heartbeat += 0.0001
+                sd.putNumber('Heartbeat', heartbeat)
+            else:
+                if DEFAULT_HIGH_GOAL_CAM:
+                    img = camera_hg.read()[1]
+                    high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
+                    gear_ret_val = None
+                else:
+                    img = camera_gear.read()[1]
+                    gear_ret_val = img_processing_main(img, False, False, DEBUG_TXT_FILES)
+                    high_goal_ret_val = None
 
             # Analyze the return parameters
             if high_goal_ret_val is None:
@@ -340,25 +463,25 @@ def main():
                     sd.putNumber('HG_Bot_Ctr_X', high_goal_ret_val['bot_ctr_X'])
                     sd.putNumber('HG_Bot_Ctr_Y', high_goal_ret_val['bot_ctr_Y'])
 
-            if peg_ret_val is None:
+            if gear_ret_val is None:
                 print "Peg Not Found"
             else:
 
-                print "Peg Left Area: " + str(peg_ret_val['left_area'])
-                print "Peg Left Ctr X: " + str(peg_ret_val['left_ctr_X'])
-                print "Peg Left Ctr Y: " + str(peg_ret_val['left_ctr_Y'])
+                print "Peg Left Area: " + str(gear_ret_val['left_area'])
+                print "Peg Left Ctr X: " + str(gear_ret_val['left_ctr_X'])
+                print "Peg Left Ctr Y: " + str(gear_ret_val['left_ctr_Y'])
 
-                print "Peg Right Area: " + str(peg_ret_val['right_area'])
-                print "Peg Right Ctr X: " + str(peg_ret_val['right_ctr_X'])
-                print "Peg Right Ctr Y: " + str(peg_ret_val['right_ctr_Y'])
+                print "Peg Right Area: " + str(gear_ret_val['right_area'])
+                print "Peg Right Ctr X: " + str(gear_ret_val['right_ctr_X'])
+                print "Peg Right Ctr Y: " + str(gear_ret_val['right_ctr_Y'])
 
                 if NETWORK_MODE:
-                    sd.putNumber('Peg_Left_Area', peg_ret_val['left_area'])
-                    sd.putNumber('Peg_Left_Ctr_X', peg_ret_val['left_ctr_X'])
-                    sd.putNumber('Peg_Left_Ctr_Y', peg_ret_val['left_ctr_Y'])
-                    sd.putNumber('Peg_Right_Area', peg_ret_val['right_area'])
-                    sd.putNumber('Peg_Right_Ctr_X', peg_ret_val['right_ctr_X'])
-                    sd.putNumber('Peg_Right_Ctr_Y', peg_ret_val['right_ctr_Y'])
+                    sd.putNumber('Peg_Left_Area', gear_ret_val['left_area'])
+                    sd.putNumber('Peg_Left_Ctr_X', gear_ret_val['left_ctr_X'])
+                    sd.putNumber('Peg_Left_Ctr_Y', gear_ret_val['left_ctr_Y'])
+                    sd.putNumber('Peg_Right_Area', gear_ret_val['right_area'])
+                    sd.putNumber('Peg_Right_Ctr_X', gear_ret_val['right_ctr_X'])
+                    sd.putNumber('Peg_Right_Ctr_Y', gear_ret_val['right_ctr_Y'])
 
             if DISPLAY_IMAGE:
                 cv2.imshow('Img', img)
@@ -368,6 +491,12 @@ def main():
             if NETWORK_MODE:
                 kill_switch = sd.getNumber('Kill_Switch', 0)
                 if kill_switch == 1:
+                    # Return back to the shell script, which will then shutdown the jetson
+                    sd.putNumber('Processing_On', -1)
+                    time.sleep(1)
+                    if ALLOW_SHUTDOWN:
+                        os.system('/sbin/shutdown -h now')
+                    time.sleep(1)
                     return
 
     else:
