@@ -9,6 +9,7 @@ import copy
 import time
 import subprocess
 import os
+import random
 from networktables import NetworkTable
 
 # For purposes of outputting a debug file that lets you know the program is running
@@ -30,7 +31,7 @@ APPROX_POLYDP_FACTOR = 0.01
 REALTIME_MODE = True
 NETWORK_MODE = True
 DISPLAY_IMAGE = False
-DEBUG_TXT_FILES = False
+DEBUG_TXT_FILES = True
 ALLOW_SHUTDOWN = False
 
 # Rectangle approx factors
@@ -52,8 +53,8 @@ DEFAULT_HIGH_GOAL_CAM = 0
 
 
 def determine_cameras():
-    info0 = subprocess.check_output("udevadm info --query=all --name=/dev/video0", shell=True)
-    info1 = subprocess.check_output("udevadm info --query=all --name=/dev/video1", shell=True)
+    info0 = subprocess.check_output("/bin/udevadm info --query=all --name=/dev/video0", shell=True)
+    info1 = subprocess.check_output("/bin/udevadm info --query=all --name=/dev/video1", shell=True)
     
     id0 = info0.split('ID_SERIAL_SHORT=')[1].split('\n')[0]
     id1 = info1.split('ID_SERIAL_SHORT=')[1].split('\n')[0]
@@ -75,15 +76,15 @@ def determine_cameras():
         
     if (high_goal_port != -999) and (gear_port != -999):
         # Both successfully found
-        high_goal_found = 88
-        gear_found = 88
+        high_goal_found = 44
+        gear_found = 44
     elif (high_goal_port != -999) and (gear_port == -999):
         # Gear port not found, set it equal to high goal port
-        high_goal_found = 88
+        high_goal_found = 44
         gear_port = high_goal_port
     elif (high_goal_port == -999) and (gear_port != -999):
         # high goal port not found, set it equal to high goal port
-        gear_found = 88
+        gear_found = 44
         high_goal_port = gear_port
     else:
         # Neither found.  Default to 0
@@ -337,10 +338,17 @@ def main():
     Main method for image processing
     """
     if REALTIME_MODE:
+        #os.system('/usr/bin/v4l2-ctl -d /dev/video0 --set-fmt-video=width=640,height=480,pixelformat=1')
+        #os.system('/usr/bin/v4l2-ctl -d /dev/video1 --set-fmt-video=width=640,height=480,pixelformat=1')
+    
         (high_goal_port, gear_port, high_goal_found, gear_found) = determine_cameras()
         
-        #camera_hg = cv2.VideoCapture(high_goal_port)
-        #camera_gear = cv2.VideoCapture(gear_port)
+        camera_hg = cv2.VideoCapture(high_goal_port)
+        camera_gear = cv2.VideoCapture(gear_port)
+
+        time.sleep(1)
+        
+        
 
     if NETWORK_MODE:
         # This is the IP of the robo rio
@@ -381,12 +389,6 @@ def main():
 
     if REALTIME_MODE:
         while True:
-            if DEFAULT_HIGH_GOAL_CAM:
-            	current_camera = 'HG'
-                cam = cv2.VideoCapture(high_goal_port)
-            else:
-                current_camera = 'Gear'
-                cam = cv2.VideoCapture(gear_port)
             # Determine which camera we should be looking at
             # We still run the algorithm for both targets, as a safety if the cameras are 
             # somehow switches
@@ -400,15 +402,8 @@ def main():
                     sd.putNumber('Peg_Right_Area', -999)
                     sd.putNumber('Peg_Right_Ctr_X', -999)
                     sd.putNumber('Peg_Right_Ctr_Y', -999)
-
-                    if current_camera == 'Gear':
-                        cam.release()
-                        time.sleep(0.25)
-                        cam = cv2.VideoCapture(high_goal_port)
-                        time.sleep(0.25)
-                        current_camera = 'HG'
                 
-                    img = cam.read()[1]
+                    img = camera_hg.read()[1]
                     high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
                     gear_ret_val = None
                 else:
@@ -418,22 +413,16 @@ def main():
                     sd.putNumber('HG_Bot_Area', -999)
                     sd.putNumber('HG_Bot_Ctr_X', -999)
                     sd.putNumber('HG_Bot_Ctr_Y', -999)
-
-                    if current_camera == 'HG':
-                        cam.release()
-                        time.sleep(0.25)
-                        cam = cv2.VideoCapture(gear_port)
-                        time.sleep(0.25)
-                        current_camera = 'Gear'
                 
-                    img = cam.read()[1]
+                    img = camera_gear.read()[1]
                     gear_ret_val = img_processing_main(img, False, False, DEBUG_TXT_FILES)
                     high_goal_ret_val = None
                 
                 heartbeat += 0.0001
                 sd.putNumber('Heartbeat', heartbeat)
             else:
-                if DEFAULT_HIGH_GOAL_CAM:
+                val = random.randint(0,1)
+                if val:
                     img = camera_hg.read()[1]
                     high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
                     gear_ret_val = None

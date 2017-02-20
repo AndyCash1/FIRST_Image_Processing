@@ -4,6 +4,7 @@ It is used for the 2017 FRC competition
 """
 
 import numpy as np
+import importlib
 import cv2
 import copy
 import time
@@ -14,6 +15,8 @@ from networktables import NetworkTable
 
 # For purposes of outputting a debug file that lets you know the program is running
 DEBUG_FILEPATH = '/home/ubuntu/Documents/FIRST_Image_Processing/image_processing/'
+
+RIO_IP = '10.13.29.2'
 
 # Min perimeter for the object... contours are not processed
 # unless they meet both of these requirements
@@ -29,10 +32,10 @@ APPROX_POLYDP_FACTOR = 0.01
 
 # Functional logicals
 REALTIME_MODE = True
-NETWORK_MODE = False
+NETWORK_MODE = True
 DISPLAY_IMAGE = True
 DEBUG_TXT_FILES = False
-ALLOW_SHUTDOWN = False
+ALLOW_SHUTDOWN = True
 
 # Rectangle approx factors
 HG_MAX_AREA_DIFF = 3
@@ -53,18 +56,18 @@ DEFAULT_HIGH_GOAL_CAM = 0
 
 
 def determine_cameras():
-    info0 = subprocess.check_output("udevadm info --query=all --name=/dev/video0", shell=True)
-    info1 = subprocess.check_output("udevadm info --query=all --name=/dev/video1", shell=True)
-    
+    info0 = subprocess.check_output("/bin/udevadm info --query=all --name=/dev/video0", shell=True)
+    info1 = subprocess.check_output("/bin/udevadm info --query=all --name=/dev/video1", shell=True)
+
     id0 = info0.split('ID_SERIAL_SHORT=')[1].split('\n')[0]
     id1 = info1.split('ID_SERIAL_SHORT=')[1].split('\n')[0]
-    
+
     high_goal_port = -999
     gear_port = -999
-    
+
     high_goal_found = -88
     gear_found = -88
-    
+
     if (id0 == HIGH_GOAL_CAM_ID):
         high_goal_port = 0
     if (id0 == GEAR_CAM_ID):
@@ -73,24 +76,24 @@ def determine_cameras():
         high_goal_port = 1
     if (id1 == GEAR_CAM_ID):
         gear_port = 1
-        
+
     if (high_goal_port != -999) and (gear_port != -999):
         # Both successfully found
-        high_goal_found = 88
-        gear_found = 88
+        high_goal_found = 44
+        gear_found = 44
     elif (high_goal_port != -999) and (gear_port == -999):
         # Gear port not found, set it equal to high goal port
-        high_goal_found = 88
+        high_goal_found = 44
         gear_port = high_goal_port
     elif (high_goal_port == -999) and (gear_port != -999):
         # high goal port not found, set it equal to high goal port
-        gear_found = 88
+        gear_found = 44
         high_goal_port = gear_port
     else:
         # Neither found.  Default to 0
         high_goal_port = 0
         gear_port = 0
-        
+
     return (high_goal_port, gear_port, high_goal_found, gear_found)
 
 def calc_height_width(contour):
@@ -337,23 +340,50 @@ def main():
     """
     Main method for image processing
     """
+
     if REALTIME_MODE:
+        time.sleep(1)
+
+        os.system('/usr/bin/v4l2-ctl -d /dev/video0 --set-fmt-video=width=640,height=480,pixelformat=1')
+        time.sleep(1)
+        os.system('/usr/bin/v4l2-ctl -d /dev/video1 --set-fmt-video=width=640,height=480,pixelformat=1')
+        time.sleep(1)
+
+        os.system('/usr/bin/v4l2-ctl -d /dev/video0 -c exposure_auto=1')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video0 -c exposure_absolute=7')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video0 -c brightness=100')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video0 -c contrast=32')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video0 -c gain=64')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video0 -c white_balance_temperature_auto=0')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video0 -c white_balance_temperature=4000')
+        time.sleep(1)
+        os.system('/usr/bin/v4l2-ctl -d /dev/video1 -c exposure_auto=1')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video1 -c exposure_absolute=7')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video1 -c brightness=100')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video1 -c contrast=32')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video1 -c gain=64')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video1 -c white_balance_temperature_auto=0')
+        os.system('/usr/bin/v4l2-ctl -d /dev/video1 -c white_balance_temperature=4000')
+        time.sleep(1)
+
         (high_goal_port, gear_port, high_goal_found, gear_found) = determine_cameras()
-        
+
         camera_hg = cv2.VideoCapture(high_goal_port)
         camera_gear = cv2.VideoCapture(gear_port)
 
+        time.sleep(1)
+
     if NETWORK_MODE:
         # This is the IP of the robo rio
-        NetworkTable.setIPAddress('10.13.29.2')
+        NetworkTable.setIPAddress(RIO_IP)
         NetworkTable.setClientMode()
         NetworkTable.initialize()
 
         # The name of the network table here needs to match the name in the java code
         sd = NetworkTable.getTable('Camera')
-        
+
         time.sleep(1)
-        
+
         # Initialize the values
         sd.putNumber('HG_Top_Area', -999)
         sd.putNumber('HG_Top_Ctr_X', -999)
@@ -361,19 +391,19 @@ def main():
         sd.putNumber('HG_Bot_Area', -999)
         sd.putNumber('HG_Bot_Ctr_X', -999)
         sd.putNumber('HG_Bot_Ctr_Y', -999)
-                
+
         sd.putNumber('Peg_Left_Area', -999)
         sd.putNumber('Peg_Left_Ctr_X', -999)
         sd.putNumber('Peg_Left_Ctr_Y', -999)
         sd.putNumber('Peg_Right_Area', -999)
         sd.putNumber('Peg_Right_Ctr_X', -999)
         sd.putNumber('Peg_Right_Ctr_Y', -999)
-        
+
         # Reset the kill switch to 0
         heartbeat = 0
         sd.putNumber('Processing_On', 1)
         sd.putNumber('Heartbeat', heartbeat)
-        
+
         if REALTIME_MODE:
             sd.putNumber('High_Goal_Port', high_goal_port)
             sd.putNumber('Gear_Port', gear_port)
@@ -383,19 +413,19 @@ def main():
     if REALTIME_MODE:
         while True:
             # Determine which camera we should be looking at
-            # We still run the algorithm for both targets, as a safety if the cameras are 
+            # We still run the algorithm for both targets, as a safety if the cameras are
             # somehow switches
             if NETWORK_MODE:
                 hg_logical = sd.getNumber('High_Goal_Logical', DEFAULT_HIGH_GOAL_CAM)
-            
-                if hg_logical == 1:      
+
+                if hg_logical == 1:
                     sd.putNumber('Peg_Left_Area', -999)
                     sd.putNumber('Peg_Left_Ctr_X', -999)
                     sd.putNumber('Peg_Left_Ctr_Y', -999)
                     sd.putNumber('Peg_Right_Area', -999)
                     sd.putNumber('Peg_Right_Ctr_X', -999)
                     sd.putNumber('Peg_Right_Ctr_Y', -999)
-                
+
                     img = camera_hg.read()[1]
                     high_goal_ret_val = img_processing_main(img, True, False, DEBUG_TXT_FILES)
                     gear_ret_val = None
@@ -406,11 +436,11 @@ def main():
                     sd.putNumber('HG_Bot_Area', -999)
                     sd.putNumber('HG_Bot_Ctr_X', -999)
                     sd.putNumber('HG_Bot_Ctr_Y', -999)
-                
+
                     img = camera_gear.read()[1]
                     gear_ret_val = img_processing_main(img, False, False, DEBUG_TXT_FILES)
                     high_goal_ret_val = None
-                
+
                 heartbeat += 0.0001
                 sd.putNumber('Heartbeat', heartbeat)
             else:
@@ -468,7 +498,7 @@ def main():
             if DISPLAY_IMAGE:
                 cv2.imshow('Img', img)
                 cv2.waitKey(1)
-                
+
             # If in network mode, command to stop the image processing
             if NETWORK_MODE:
                 kill_switch = sd.getNumber('Kill_Switch', 0)
@@ -477,7 +507,7 @@ def main():
                     sd.putNumber('Processing_On', -1)
                     time.sleep(1)
                     if ALLOW_SHUTDOWN:
-                        os.system('/sbin/shutdown -h now')
+                        os.system('echo ubuntu | sudo -S /sbin/shutdown -h now')
                     time.sleep(1)
                     return
 
