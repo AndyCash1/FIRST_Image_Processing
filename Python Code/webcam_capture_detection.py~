@@ -6,4 +6,4 @@ camera = cv2.VideoCapture(camera_port)
 
 img = camera.read()[1]
 
-cv2.imwrite('new_test2.png', img)
+cv2.imwrite('new_test1.png', img)
