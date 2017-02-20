@@ -160,6 +160,11 @@ Find the PID of the process (left most number) and then run:
 
 sudo kill <PID>
 
+Alternatively, the startup processer can be used.  Open up "Startup Applications"
+and create a new task with the following command:
+
+xterm -e "/home/ubuntu/Documents/FIRST_Image_Processing/image_processing/startup_processing.sh"
+
 ## Connecting to the RoboRio
 
 ### RoboRio Config
@@ -194,21 +199,7 @@ http://pynetworktables.readthedocs.io/en/stable/examples.html#robot-example
 
 ## Running the algorithm
 
-Open up a cmd terminal on the jetson.  Ensure the lifecam 3000 is properly detected by running 
-the following command:
-
-v4l2-ctl --list-devices
-
-Then, run the following command to modify the exposure settings:
-
-v4l2-ctl -d /dev/video0 -c exposure_auto=1 -c exposure_absolute=$1 
--c brightness=30 -c contrast=10
-
-The image will pop up and when the object is detected, it will be highlighted with a red outline.
-Also, the terminal will show the features extracted.
-
-Back on the driverstation, those features should now be visible on the smartdashboard, 
-after you put teleop mode on.
+Simply run startup_processing.sh
 
 ## Algorithm discussion
 
